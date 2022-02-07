@@ -1,60 +1,53 @@
-const {
-  BrowserWindow,
-  app,
-  globalShortcut,
-  screen,
-  shell,
-} = require("electron");
-
+const { BrowserWindow, app, screen } = require("electron");
 const fs = require("fs");
-const path = require("path");
+const isDev = require("electron-is-dev");
 
-const SETTINGS_PATH = path.resolve("./settings.json");
-const PRELOAD_PATH = path.resolve("./preload.js");
+const paths = require("./config/paths");
+const settings = JSON.parse(fs.readFileSync(paths.SETTINGS_PATH));
 
-const settings = JSON.parse(fs.readFileSync(SETTINGS_PATH));
+const shortcuts = require("./util/shortcuts");
+const { minimizeAndHide } = require("./util/utils");
 
 const createWindow = () => {
   const scaleFactor = screen.getPrimaryDisplay().scaleFactor;
 
   const win = new BrowserWindow({
-    width: 840 / scaleFactor,
-    height: 85 / scaleFactor,
-    frame: false,
-    resizable: false,
-    skipTaskbar: true,
-    webPreferences: { preload: PRELOAD_PATH },
-  });
-
-  win.focus();
-
-  win.webContents.openDevTools();
-
-  globalShortcut.register(settings.appToggleShortcut, () => {
-    if (win.isFocused()) {
-      win.hide();
-      if (!settings.rememberHistory) {
-        win.webContents.send("history", "clear");
-      }
-    } else {
-      win.show();
-    }
-  });
-
-  globalShortcut.register("Ctrl+,", () => {
-    if (win.isFocused()) {
-      shell.openPath(SETTINGS_PATH);
-    }
-  });
-
-  globalShortcut.register("Esc", () => {
-    if (win.isFocused()) {
-      win.hide();
-    }
+    width: settings.widthInPx / scaleFactor,
+    height: settings.heightInPx / scaleFactor,
+    frame: settings.showFrame,
+    resizable: settings.resizable,
+    skipTaskbar: settings.skipTaskbar,
+    webPreferences: { preload: paths.PRELOAD_PATH },
   });
 
   win.removeMenu();
-  win.loadFile("index.html");
+
+  win.webContents.send("font", {
+    fontFamily: settings.fontFamily,
+    fontSizeInPx: settings.fontSizeInPx,
+  });
+
+  win.on("show", () => {
+    if (!settings.rememberHistory) {
+      win.webContents.send("history", "clear");
+    }
+  });
+
+  win.on("blur", () => {
+    minimizeAndHide(win);
+  });
+
+  shortcuts.registerAppToggle(win, settings.appToggleShortcut);
+  shortcuts.registerOpenSettings(win, paths.SETTINGS_PATH);
+  shortcuts.registerHideApp(win);
+
+  win.focus();
+
+  if (isDev) {
+    win.webContents.openDevTools();
+  }
+
+  win.loadFile(paths.INDEX_PATH);
 };
 
 app.whenReady().then(() => {
@@ -62,5 +55,7 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });

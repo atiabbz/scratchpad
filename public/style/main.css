@@ -6,8 +6,7 @@ body {
 textarea {
   width: 100vw;
   height: 100vh;
-  font-family: "monospace";
-  font-size: 14px;
+  font-family: monospace;
   border: none;
   overflow: auto;
   outline: none;

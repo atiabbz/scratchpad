@@ -1,9 +1,10 @@
 {
   "appToggleShortcut": "CommandOrControl+Alt+Space",
-  "fontFamily": "monospace",
-  "fontSizeInPx": 14,
+  "fontFamily": "Roboto Mono",
+  "fontSizeInPx": "14px",
   "rememberHistory": false,
-  "resizable": false,
+  "showFrame": false,
+  "resizable": true,
   "skipTaskbar": true,
   "widthInPx": 840,
   "heightInPx": 85
